@@ -8,7 +8,9 @@ const OtherUser = ({ user }) => {
     const { selectedUser, onLineUsers } = useSelector(store => store.user);
     // console.log("🧠 selectedUser:", selectedUser);
     // console.log("🧠 onLineUsers in Redux:", onLineUsers);
-    const isOnLine = onLineUsers.map(onlineUser => String(onlineUser._id)).includes(String(user.id));
+    // const isOnLine = onLineUsers.map(onlineUser => String(onlineUser._id)).includes(String(user.id));
+    const isOnLine = Array.isArray(onLineUsers) &&
+  onLineUsers.map(user => String(user._id)).includes(String(user.id));
     const selectedUserHandler = () => {
         // console.log(user);
         dispatch(setSelectedUser(user));
