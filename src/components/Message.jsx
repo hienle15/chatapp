@@ -13,12 +13,14 @@ const Message = ({ message }) => {
     }, [message]);
 
     // 🛠 Log dữ liệu để kiểm tra
-    console.log("Log authUser:", authUser);
-    console.log("Message object:", message);
+    // console.log("Log authUser:", authUser);
+    // console.log("Message object:", message);
 
     // Sử dụng đúng key để so sánh
     const isSender = authUser?._id === message?.senderId;
-    console.log("Redux user state:", useSelector(store => store.user));
+    // console.log("sender:", isSender);
+    
+    // console.log("Redux user state:", useSelector(store => store.user));
 
 
     return (

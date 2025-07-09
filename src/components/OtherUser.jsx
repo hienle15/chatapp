@@ -6,11 +6,11 @@ import { setSelectedUser } from '../redux/userSlice';
 const OtherUser = ({ user }) => {
     const dispatch = useDispatch();
     const { selectedUser, onLineUsers } = useSelector(store => store.user);
-    console.log("🧠 selectedUser:", selectedUser);
-    console.log("🧠 onLineUsers in Redux:", onLineUsers);
+    // console.log("🧠 selectedUser:", selectedUser);
+    // console.log("🧠 onLineUsers in Redux:", onLineUsers);
     const isOnLine = onLineUsers.map(onlineUser => String(onlineUser._id)).includes(String(user.id));
     const selectedUserHandler = () => {
-        console.log(user);
+        // console.log(user);
         dispatch(setSelectedUser(user));
     }
 

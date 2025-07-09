@@ -9,6 +9,9 @@ import { setAuthUsers, setOnLineUsers } from './redux/userSlice';
 import io from "socket.io-client";
 import { SocketContext } from './context/SocketContext'; // ✅ Import context
 import { setSocket } from './redux/socketSlice'; // nhớ import!
+import { setSocket as setSocketRedux } from './redux/socketSlice';
+
+import useGetRealTimeMessage from './components/hooks/useGetRealTimeMessage';
 const router = createBrowserRouter([
   { path: "/", element: <HomePage /> },
   { path: "/register", element: <Signup /> },
@@ -22,23 +25,31 @@ function App() {
   const [socket, setSocket] = useState(null); // ✅ Local state thay vì Redux
 
   useEffect(() => {
-    const syncAuthUser = () => {
-      const storedUser = localStorage.getItem("authUser");
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        // Chỉ dispatch khi Redux chưa có hoặc sai user
-        if (!authUser || authUser._id !== parsedUser._id) {
-          dispatch(setAuthUsers(parsedUser));
-        }
+    // const syncAuthUser = () => {
+    //   const storedUser = localStorage.getItem("authUser");
+    //   if (storedUser) {
+    //     const parsedUser = JSON.parse(storedUser);
+    //     // Chỉ dispatch khi Redux chưa có hoặc sai user
+    //     if (!authUser || authUser._id !== parsedUser._id) {
+    //       dispatch(setAuthUsers(parsedUser));
+    //     }
+    //   }
+    // useGetRealTimeMessage();
+    const storedUser = localStorage.getItem("authUser");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      // Chỉ dispatch khi Redux chưa có hoặc sai user
+      if (!authUser || authUser._id !== parsedUser._id) {
+        dispatch(setAuthUsers(parsedUser));
       }
     };
 
-    window.addEventListener("focus", syncAuthUser);     // Khi tab được focus
+    // window.addEventListener("focus", syncAuthUser);     // Khi tab được focus
     // window.addEventListener("storage", syncAuthUser);   // Khi localStorage thay đổi từ tab khác
     // syncAuthUser(); // Chạy lần đầu
 
     return () => {
-      window.removeEventListener("focus", syncAuthUser);
+      // window.removeEventListener("focus", syncAuthUser);
       // window.removeEventListener("storage", syncAuthUser);
     };
   }, [authUser]);
@@ -51,7 +62,7 @@ function App() {
         withCredentials: true,
       });
       setSocket(newSocket);
-
+      dispatch(setSocketRedux(newSocket))
       newSocket.on('getOnLineUsers', (onLineUsers) => {
         console.log("🟢 [SOCKET] Online users from server:", onLineUsers); // ✅
         dispatch(setOnLineUsers(onLineUsers));
@@ -61,9 +72,12 @@ function App() {
     } else {
       if (socket) socket.close();
       setSocket(null);
+
       // dispatch(setSocket(null))
     }
   }, [authUser]);
+
+  // useGetRealTimeMessage();
 
   return (
     <SocketContext.Provider value={socket}>

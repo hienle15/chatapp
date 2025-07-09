@@ -51,7 +51,7 @@ const Login = () => {
                     email: res.data.email,
                     photo: res.data.photo
                 }));
-                console.log("res.data after login:", res.data);
+                // console.log("res.data after login:", res.data);
 
                 setTimeout(() => {
                     navigate("/");
