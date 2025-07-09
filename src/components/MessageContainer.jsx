@@ -47,7 +47,11 @@ const MessageContainer = () => {
                 }
             );
 
-            dispatch(setMessages(messages ? [...messages, res?.data?.newMessage] : [res?.data?.newMessage]));
+          dispatch(setMessages(
+  Array.isArray(messages)
+    ? [...messages, res?.data?.newMessage]
+    : [res?.data?.newMessage]
+));
         } catch (error) {
             console.error("Lỗi khi gửi tin nhắn:", error);
         }
@@ -92,9 +96,13 @@ const MessageContainer = () => {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-3 bg-white space-y-2 scrollbar-thin scrollbar-thumb-gray-300">
-                {messages?.map((msg) => (
+                {/* {messages?.map((msg) => (
                     <Message key={msg._id || msg.id} message={msg} />
-                ))}
+                ))} */}
+                {Array.isArray(messages) &&
+                    messages.map((msg) => (
+                        <Message key={msg._id || msg.id} message={msg} />
+                    ))}
             </div>
 
             {/* Input chat */}

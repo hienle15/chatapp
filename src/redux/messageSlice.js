@@ -3,14 +3,14 @@ import { createSlice } from "@reduxjs/toolkit";
 const messageSlice = createSlice({
   name: "message",
   initialState: {
-    messages: null,
+    messages: [],
   },
   reducers: {
     setMessages: (state, action) => {
-      state.messages = action.payload;
+      state.messages = Array.isArray(action.payload) ? action.payload : [];
     },
     resetMessages: (state) => {
-      state.messages = null; // hoặc [] nếu bạn dùng mảng
+      state.messages = []; // ✅ an toàn
     },
   },
 });
