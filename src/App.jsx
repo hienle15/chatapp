@@ -13,7 +13,14 @@ import { setSocket as setSocketRedux } from './redux/socketSlice';
 
 import useGetRealTimeMessage from './components/hooks/useGetRealTimeMessage';
 const router = createBrowserRouter([
-  { path: "/", element: <HomePage /> },
+ {
+    path: '/',
+    element: (
+      <ProtectedRoute>
+        <HomePage />
+      </ProtectedRoute>
+    ),
+  },
   { path: "/register", element: <Signup /> },
   { path: "/login", element: <Login /> }
 ]);
