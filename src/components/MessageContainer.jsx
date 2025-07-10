@@ -11,15 +11,20 @@ import useGetRealTimeMessage from './hooks/useGetRealTimeMessage';
 
 const MessageContainer = () => {
     const [message, setMessage] = useState("");
+    const [isSending, setIsSending] = useState(false);
     const dispatch = useDispatch();
     const { selectedUser, authUser, onLineUsers } = useSelector(store => store.user);
     const { messages } = useSelector(store => store.message);
+    const { socket } = useSelector(store => store.socket);
+    
     console.log("🧠 onLineUsers:", onLineUsers);
     const isOnLine = selectedUser?.id &&
         Array.isArray(onLineUsers) &&
         onLineUsers.map(onlineUser => String(onlineUser._id)).includes(String(selectedUser.id));
+    
     useGetRealTimeMessage();
     useGetMessages();
+    
     console.log("DEBUG:", {
         selectedUser: selectedUser?._id,
         onLineUsers,
@@ -29,9 +34,28 @@ const MessageContainer = () => {
     useEffect(() => {
         return () => dispatch(setSelectedUser(null));
     }, []);
+
     const onSubmitHandler = async (e) => {
         e.preventDefault();
-        if (!message.trim()) return;
+        if (!message.trim() || isSending) return;
+
+        const messageText = message.trim();
+        setMessage("");
+        setIsSending(true);
+
+        // Optimistic update - thêm message ngay lập tức
+        const optimisticMessage = {
+            _id: `temp_${Date.now()}`,
+            message: messageText,
+            senderId: authUser._id,
+            receiverId: selectedUser.id,
+            createdAt: new Date().toISOString(),
+            isOptimistic: true,
+            // Thêm timestamp để dễ track
+            optimisticTimestamp: Date.now()
+        };
+
+        dispatch(setMessages([...messages, optimisticMessage]));
 
         try {
             const baseURL = import.meta.env.VITE_API_BASE_URL;
@@ -40,23 +64,35 @@ const MessageContainer = () => {
 
             const res = await axios.post(
                 sendURL,
-                { message },
+                { message: messageText },
                 {
                     headers: { 'Content-Type': 'application/json' },
                     withCredentials: true,
                 }
             );
 
-          dispatch(setMessages(
-  Array.isArray(messages)
-    ? [...messages, res?.data?.newMessage]
-    : [res?.data?.newMessage]
-));
+            // Không cần cập nhật message ở đây nữa vì socket sẽ handle
+            // Chỉ emit socket event để thông báo cho user khác
+            if (socket) {
+                socket.emit('sendMessage', {
+                    message: messageText,
+                    receiverId: selectedUser.id,
+                    senderId: authUser._id
+                });
+            }
+
         } catch (error) {
             console.error("Lỗi khi gửi tin nhắn:", error);
+            
+            // Xóa optimistic message nếu gửi thất bại
+            const filteredMessages = messages.filter(msg => msg._id !== optimisticMessage._id);
+            dispatch(setMessages(filteredMessages));
+            
+            // Khôi phục message về input
+            setMessage(messageText);
+        } finally {
+            setIsSending(false);
         }
-
-        setMessage("");
     };
 
     if (!selectedUser) {
@@ -96,12 +132,9 @@ const MessageContainer = () => {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-3 bg-white space-y-2 scrollbar-thin scrollbar-thumb-gray-300">
-                {/* {messages?.map((msg) => (
-                    <Message key={msg._id || msg.id} message={msg} />
-                ))} */}
                 {Array.isArray(messages) &&
                     messages.map((msg) => (
-                        <Message key={msg._id || msg.id} message={msg} />
+                        <Message key={msg._id || msg.id || msg.timestamp} message={msg} />
                     ))}
             </div>
 
@@ -116,13 +149,15 @@ const MessageContainer = () => {
                         onChange={(e) => setMessage(e.target.value)}
                         type="text"
                         placeholder="Type your message..."
-                        className="w-full bg-gray-100 rounded-2xl border border-gray-300 px-5 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm transition-all placeholder:text-gray-400"
+                        disabled={isSending}
+                        className="w-full bg-gray-100 rounded-2xl border border-gray-300 px-5 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm transition-all placeholder:text-gray-400 disabled:opacity-50"
                     />
                 </div>
 
                 <button
                     type="submit"
-                    className="bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-full p-2.5 shadow-md transition-all duration-200 active:scale-95"
+                    disabled={isSending || !message.trim()}
+                    className="bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-full p-2.5 shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <IoSend className="text-xl text-white" />
                 </button>
